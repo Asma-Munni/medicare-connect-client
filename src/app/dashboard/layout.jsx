@@ -5,17 +5,14 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
-  User,
   CalendarDays,
-  CreditCard,
-  Star,
   Users,
   Stethoscope,
   ClipboardList,
-  BarChart3,
   LogOut,
   Menu,
   X,
+  Search,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
@@ -42,32 +39,68 @@ export default function DashboardLayout({ children }) {
   };
 
   const patientMenus = [
-    { name: "Overview", href: "/dashboard/patient", icon: LayoutDashboard },
-    { name: "My Profile", href: "/dashboard/profile", icon: User },
-    { name: "My Appointments", href: "/dashboard/patient/appointments", icon: CalendarDays },
-    { name: "Payment History", href: "/dashboard/patient/payments", icon: CreditCard },
-    { name: "My Reviews", href: "/dashboard/patient/reviews", icon: Star },
+    {
+      name: "Overview",
+      href: "/dashboard/patient",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "My Appointments",
+      href: "/dashboard/patient/appointments",
+      icon: CalendarDays,
+    },
+    {
+      name: "Find Doctors",
+      href: "/find-doctors",
+      icon: Search,
+    },
   ];
 
   const doctorMenus = [
-    { name: "Overview", href: "/dashboard/doctor", icon: LayoutDashboard },
-    { name: "Profile Management", href: "/dashboard/doctor/profile", icon: User },
-    { name: "Manage Schedule", href: "/dashboard/doctor/schedule", icon: CalendarDays },
-    { name: "Appointment Requests", href: "/dashboard/doctor/appointments", icon: ClipboardList },
-    { name: "Prescriptions", href: "/dashboard/doctor/prescriptions", icon: Stethoscope },
+    {
+      name: "Overview",
+      href: "/dashboard/doctor",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Appointment Requests",
+      href: "/dashboard/doctor/appointments",
+      icon: ClipboardList,
+    },
+    {
+      name: "Find Doctors",
+      href: "/find-doctors",
+      icon: Search,
+    },
   ];
 
   const adminMenus = [
-    { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
-    { name: "Manage Users", href: "/dashboard/admin/users", icon: Users },
-    { name: "Manage Doctors", href: "/dashboard/admin/doctors", icon: Stethoscope },
-    { name: "Manage Appointments", href: "/dashboard/admin/appointments", icon: ClipboardList },
-    { name: "Payment Management", href: "/dashboard/admin/payments", icon: CreditCard },
-    { name: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
+    {
+      name: "Overview",
+      href: "/dashboard/admin",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Manage Doctors",
+      href: "/dashboard/admin/doctors",
+      icon: Stethoscope,
+    },
+    {
+      name: "Find Doctors",
+      href: "/find-doctors",
+      icon: Search,
+    },
   ];
 
   const menus =
     role === "admin" ? adminMenus : role === "doctor" ? doctorMenus : patientMenus;
+
+  const dashboardHome =
+    role === "admin"
+      ? "/dashboard/admin"
+      : role === "doctor"
+      ? "/dashboard/doctor"
+      : "/dashboard/patient";
 
   if (isPending) {
     return (
@@ -85,11 +118,15 @@ export default function DashboardLayout({ children }) {
     <section className="min-h-screen bg-slate-50">
       {/* Mobile Topbar */}
       <div className="lg:hidden sticky top-0 z-40 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-        <h2 className="font-bold text-slate-900">Dashboard</h2>
+        <Link href={dashboardHome} className="block">
+          <h2 className="font-bold text-slate-900">Dashboard</h2>
+          <p className="text-xs text-slate-500 capitalize">{role} Panel</p>
+        </Link>
 
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="text-slate-700"
+          aria-label="Toggle sidebar"
         >
           {sidebarOpen ? <X size={26} /> : <Menu size={26} />}
         </button>
@@ -117,16 +154,23 @@ export default function DashboardLayout({ children }) {
 
             <div className="min-w-0">
               <h3 className="text-sm font-semibold text-slate-900 truncate">
-                {user.name}
+                {user.name || "User"}
               </h3>
-              <p className="text-xs text-slate-500 capitalize">{role}</p>
+
+              <p className="text-xs text-slate-500 capitalize">
+                {role} Account
+              </p>
             </div>
           </div>
 
           <nav className="mt-6 space-y-2">
             {menus.map((item) => {
               const Icon = item.icon;
-              const active = pathname === item.href;
+
+              const active =
+                pathname === item.href ||
+                (item.href !== dashboardHome &&
+                  pathname.startsWith(`${item.href}/`));
 
               return (
                 <Link
@@ -135,7 +179,7 @@ export default function DashboardLayout({ children }) {
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
                     active
-                      ? "bg-blue-600 text-white"
+                      ? "bg-blue-600 text-white shadow-sm"
                       : "text-slate-700 hover:bg-blue-50 hover:text-blue-600"
                   }`}
                 >
@@ -146,13 +190,24 @@ export default function DashboardLayout({ children }) {
             })}
           </nav>
 
-          <button
-            onClick={handleLogout}
-            className="absolute bottom-5 left-5 right-5 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
+          <div className="absolute bottom-5 left-5 right-5">
+            <Link
+              href="/"
+              onClick={() => setSidebarOpen(false)}
+              className="mb-2 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition"
+            >
+              <LayoutDashboard size={18} />
+              Back to Home
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 transition"
+            >
+              <LogOut size={18} />
+              Logout
+            </button>
+          </div>
         </aside>
 
         {/* Main Content */}
@@ -162,9 +217,14 @@ export default function DashboardLayout({ children }) {
               <h2 className="text-2xl font-bold text-slate-900 capitalize">
                 {role} Dashboard
               </h2>
+
               <p className="text-sm text-slate-500">
-                Welcome back, {user.name}
+                Welcome back, {user.name || "User"}
               </p>
+            </div>
+
+            <div className="rounded-full bg-white border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 capitalize">
+              {role}
             </div>
           </div>
 
