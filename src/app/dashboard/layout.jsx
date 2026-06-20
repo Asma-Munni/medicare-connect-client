@@ -75,22 +75,27 @@ export default function DashboardLayout({ children }) {
   ];
 
   const adminMenus = [
-    {
-      name: "Overview",
-      href: "/dashboard/admin",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Manage Doctors",
-      href: "/dashboard/admin/doctors",
-      icon: Stethoscope,
-    },
-    {
-      name: "Find Doctors",
-      href: "/find-doctors",
-      icon: Search,
-    },
-  ];
+  {
+    name: "Overview",
+    href: "/dashboard/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    name: "Manage Users",
+    href: "/dashboard/admin/users",
+    icon: Users,
+  },
+  {
+    name: "Manage Doctors",
+    href: "/dashboard/admin/doctors",
+    icon: Stethoscope,
+  },
+  {
+    name: "Find Doctors",
+    href: "/find-doctors",
+    icon: Search,
+  },
+];
 
   const menus =
     role === "admin" ? adminMenus : role === "doctor" ? doctorMenus : patientMenus;
