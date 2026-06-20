@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { authClient } from "@/lib/auth-client";
+import { updateAppointmentStatus } from "@/lib/actions/appointment";
 
 export default function DoctorAppointmentRequests() {
   const { data: session, isPending } = authClient.useSession();
@@ -10,8 +11,37 @@ export default function DoctorAppointmentRequests() {
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [actionLoading, setActionLoading] = useState("");
+  
+
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+
+
+  const handleStatusUpdate = async (appointmentId, status) => {
+  try {
+    setActionLoading(appointmentId + status);
+
+    const result = await updateAppointmentStatus(appointmentId, status);
+
+    if (!result?.success) {
+      alert(result?.message || "Failed to update appointment status.");
+      return;
+    }
+
+    setAppointments((prevAppointments) =>
+      prevAppointments.map((appointment) =>
+        appointment._id === appointmentId
+          ? { ...appointment, appointmentStatus: status }
+          : appointment
+      )
+    );
+  } catch (error) {
+    alert("Something went wrong. Please try again.");
+  } finally {
+    setActionLoading("");
+  }
+};
 
   useEffect(() => {
     const loadAppointments = async () => {
@@ -146,6 +176,46 @@ export default function DoctorAppointmentRequests() {
                 {appointment.paymentStatus}
               </span>
             </div>
+
+            <div className="mt-4 border-t border-slate-100 pt-4 flex flex-wrap gap-2">
+  {appointment.appointmentStatus === "pending" && (
+    <>
+      <button
+        onClick={() => handleStatusUpdate(appointment._id, "accepted")}
+        disabled={actionLoading === appointment._id + "accepted"}
+        className="rounded-full bg-green-600 px-5 py-2 text-xs font-semibold text-white hover:bg-green-700 transition disabled:opacity-60"
+      >
+        Accept
+      </button>
+
+      <button
+        onClick={() => handleStatusUpdate(appointment._id, "rejected")}
+        disabled={actionLoading === appointment._id + "rejected"}
+        className="rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-60"
+      >
+        Reject
+      </button>
+    </>
+  )}
+
+  {appointment.appointmentStatus === "accepted" && (
+    <button
+      onClick={() => handleStatusUpdate(appointment._id, "completed")}
+      disabled={actionLoading === appointment._id + "completed"}
+      className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60"
+    >
+      Mark as Complete
+    </button>
+  )}
+
+  {["rejected", "cancelled", "completed"].includes(
+    appointment.appointmentStatus
+  ) && (
+    <p className="text-sm text-slate-500">
+      No action available for this appointment.
+    </p>
+  )}
+</div>
           </div>
         </div>
       ))}
