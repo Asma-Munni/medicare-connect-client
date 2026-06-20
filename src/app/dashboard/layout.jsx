@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }) {
     },
   ];
 
-  const adminMenus = [
+const adminMenus = [
   {
     name: "Overview",
     href: "/dashboard/admin",
@@ -89,6 +89,11 @@ export default function DashboardLayout({ children }) {
     name: "Manage Doctors",
     href: "/dashboard/admin/doctors",
     icon: Stethoscope,
+  },
+  {
+    name: "Manage Appointments",
+    href: "/dashboard/admin/appointments",
+    icon: ClipboardList,
   },
   {
     name: "Find Doctors",
