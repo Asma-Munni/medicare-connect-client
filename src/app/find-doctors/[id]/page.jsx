@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getDoctorById } from "@/lib/api/doctors";
+import DoctorReviews from "@/components/DoctorReviews";
 
 export async function generateMetadata({ params }) {
   const { id } = await params;
@@ -166,19 +167,21 @@ export default async function DoctorDetailsPage({ params }) {
                 </p>
               </div>
 
-              {/* Appointment Button at Bottom */}
+              {/* Appointment Button */}
               <div className="mt-4 pt-4 border-t border-slate-100">
-               
-              </div> 
-              <Link
-  href={`/dashboard/patient/book-appointment?doctorId=${doctor._id}`}
-  className="block w-full rounded-full bg-blue-600 px-7 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700 transition"
->
-  Book Appointment
-</Link>
+                <Link
+                  href={`/dashboard/patient/book-appointment?doctorId=${doctor._id}`}
+                  className="block w-full rounded-full bg-blue-600 px-7 py-2.5 text-center text-sm font-semibold text-white hover:bg-blue-700 transition"
+                >
+                  Book Appointment
+                </Link>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Full Reviews Section */}
+        <DoctorReviews doctorId={doctor._id} />
       </section>
     </main>
   );

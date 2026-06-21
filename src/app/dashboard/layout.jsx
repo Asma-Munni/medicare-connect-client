@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  Star,
   Search,
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
@@ -54,6 +55,11 @@ export default function DashboardLayout({ children }) {
       href: "/find-doctors",
       icon: Search,
     },
+    {
+  name: "My Reviews",
+  href: "/dashboard/patient/reviews",
+  icon: Star,
+},
   ];
 
   const doctorMenus = [
