@@ -34,3 +34,17 @@ export const updateDoctorVerification = async (id, verificationStatus) => {
 
   return result;
 };
+
+export const updateDoctorSchedule = async (doctorId, scheduleData) => {
+  const result = await serverMutation(
+    `/doctors/${doctorId}/schedule`,
+    scheduleData,
+    "PATCH"
+  );
+
+  revalidatePath("/dashboard/doctor/schedule");
+  revalidatePath("/find-doctors");
+  revalidatePath(`/find-doctors/${doctorId}`);
+
+  return result;
+};
