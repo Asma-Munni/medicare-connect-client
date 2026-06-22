@@ -14,6 +14,7 @@ import {
   Menu,
   CreditCard,
   X,
+  UserCircle,
   FileText,
   Star,
   Search,
@@ -48,6 +49,11 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/patient",
       icon: LayoutDashboard,
     },
+    {
+  name: "My Profile",
+  href: "/dashboard/profile",
+  icon: UserCircle,
+},
     {
       name: "My Appointments",
       href: "/dashboard/patient/appointments",
@@ -88,6 +94,11 @@ export default function DashboardLayout({ children }) {
       icon: LayoutDashboard,
     },
     {
+  name: "My Profile",
+  href: "/dashboard/profile",
+  icon: UserCircle,
+},
+    {
       name: "Appointment Requests",
       href: "/dashboard/doctor/appointments",
       icon: ClipboardList,
@@ -110,6 +121,11 @@ const adminMenus = [
     href: "/dashboard/admin",
     icon: LayoutDashboard,
   },
+  {
+  name: "My Profile",
+  href: "/dashboard/profile",
+  icon: UserCircle,
+},
   {
     name: "Manage Users",
     href: "/dashboard/admin/users",
