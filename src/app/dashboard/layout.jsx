@@ -11,6 +11,7 @@ import {
   ClipboardList,
   LogOut,
   Menu,
+  CreditCard,
   X,
   Star,
   Search,
@@ -50,16 +51,22 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/patient/appointments",
       icon: CalendarDays,
     },
+   
     {
-      name: "Find Doctors",
-      href: "/find-doctors",
-      icon: Search,
-    },
+  name: "My Payments",
+  href: "/dashboard/patient/payments",
+  icon: CreditCard,
+},
     {
   name: "My Reviews",
   href: "/dashboard/patient/reviews",
   icon: Star,
 },
+ {
+      name: "Find Doctors",
+      href: "/find-doctors",
+      icon: Search,
+    },
   ];
 
   const doctorMenus = [
@@ -101,6 +108,11 @@ const adminMenus = [
     href: "/dashboard/admin/appointments",
     icon: ClipboardList,
   },
+  {
+  name: "Manage Payments",
+  href: "/dashboard/admin/payments",
+  icon: CreditCard,
+},
   {
     name: "Find Doctors",
     href: "/find-doctors",
