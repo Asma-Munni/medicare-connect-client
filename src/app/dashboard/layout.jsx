@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+
 import {
   LayoutDashboard,
   CalendarDays,
@@ -13,6 +14,7 @@ import {
   Menu,
   CreditCard,
   X,
+  FileText,
   Star,
   Search,
 } from "lucide-react";
@@ -51,6 +53,11 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/patient/appointments",
       icon: CalendarDays,
     },
+    {
+  name: "My Prescriptions",
+  href: "/dashboard/patient/prescriptions",
+  icon: FileText,
+},
    
     {
   name: "My Payments",
@@ -80,6 +87,11 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/doctor/appointments",
       icon: ClipboardList,
     },
+    {
+  name: "Prescriptions",
+  href: "/dashboard/doctor/prescriptions",
+  icon: FileText,
+},
     {
       name: "Find Doctors",
       href: "/find-doctors",
