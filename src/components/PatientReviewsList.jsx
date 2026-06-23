@@ -1,67 +1,37 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
-import { createReview } from "@/lib/actions/review";
+import {
+  createReview,
+  getPatientReviewData,
+} from "@/lib/actions/review";
 import { Star, MessageSquare, CheckCircle } from "lucide-react";
 
 export default function PatientReviewsList() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-
+  const [patientId, setPatientId] = useState("");
   const [appointments, setAppointments] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
-
   const [formData, setFormData] = useState({});
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
   useEffect(() => {
     const loadData = async () => {
-      if (isPending) return;
-
-      if (!user) {
-        setLoading(false);
-        setError("Please login to manage your reviews.");
-        return;
-      }
-
-      const patientId = user?.id || user?._id || user?.email;
-
       try {
         setLoading(true);
+        setError("");
 
-        const appointmentRes = await fetch(
-          `${baseUrl}/appointments/patient/${patientId}`,
-          { cache: "no-store" }
-        );
+        const result = await getPatientReviewData();
 
-        const appointmentData = await appointmentRes.json();
-
-        const reviewRes = await fetch(
-          `${baseUrl}/reviews/patient/${patientId}`,
-          { cache: "no-store" }
-        );
-
-        const reviewData = await reviewRes.json();
-
-        if (!appointmentData?.success) {
-          setError(
-            appointmentData?.message || "Failed to load your appointments."
-          );
+        if (!result?.success) {
+          setError(result?.message || "Failed to load reviews.");
           return;
         }
 
-        if (!reviewData?.success) {
-          setError(reviewData?.message || "Failed to load your reviews.");
-          return;
-        }
-
-        setAppointments(appointmentData?.data || []);
-        setReviews(reviewData?.data || []);
+        setPatientId(result?.data?.patientId || "");
+        setAppointments(result?.data?.appointments || []);
+        setReviews(result?.data?.reviews || []);
       } catch (error) {
         setError("Something went wrong while loading reviews.");
       } finally {
@@ -70,7 +40,7 @@ export default function PatientReviewsList() {
     };
 
     loadData();
-  }, [isPending, user, baseUrl]);
+  }, []);
 
   const handleInputChange = (appointmentId, field, value) => {
     setFormData((prev) => ({
@@ -92,14 +62,18 @@ export default function PatientReviewsList() {
       return;
     }
 
+    if (!patientId) {
+      alert("Patient ID missing. Please reload the page.");
+      return;
+    }
+
     try {
       setActionLoading(appointment._id);
-
-      const patientId = user?.id || user?._id || user?.email;
 
       const result = await createReview({
         appointmentId: appointment._id,
         patientId,
+        doctorId: appointment.doctorId,
         rating: Number(rating),
         comment,
       });
@@ -111,9 +85,9 @@ export default function PatientReviewsList() {
 
       alert("Review submitted successfully.");
 
-      const newReview = result.data;
-
-      setReviews((prev) => [newReview, ...prev]);
+      if (result?.data) {
+        setReviews((prev) => [result.data, ...prev]);
+      }
 
       setFormData((prev) => ({
         ...prev,
@@ -129,7 +103,7 @@ export default function PatientReviewsList() {
     }
   };
 
-  if (isPending || loading) {
+  if (loading) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
         <p className="text-slate-500">Loading reviews...</p>
@@ -168,6 +142,7 @@ export default function PatientReviewsList() {
             <h2 className="text-xl font-bold text-slate-900">
               Give Doctor Review
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               You can review only completed appointments.
             </p>
@@ -242,6 +217,7 @@ export default function PatientReviewsList() {
                     />
 
                     <button
+                      type="button"
                       onClick={() => handleReviewSubmit(appointment)}
                       disabled={actionLoading === appointment._id}
                       className="w-full rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
@@ -266,6 +242,7 @@ export default function PatientReviewsList() {
 
           <div>
             <h2 className="text-xl font-bold text-slate-900">My Reviews</h2>
+
             <p className="mt-1 text-sm text-slate-500">
               Reviews you already submitted.
             </p>
@@ -290,7 +267,7 @@ export default function PatientReviewsList() {
 
                   <div>
                     <h3 className="font-bold text-slate-900">
-                      {review.doctorName}
+                      {review.doctorName || "Doctor"}
                     </h3>
 
                     <p className="mt-1 text-sm text-yellow-600 font-semibold">

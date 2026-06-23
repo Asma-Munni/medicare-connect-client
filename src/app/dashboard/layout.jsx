@@ -79,11 +79,7 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/patient/appointments",
       icon: CalendarDays,
     },
-    {
-  name: "Manage Schedule",
-  href: "/dashboard/doctor/schedule",
-  icon: CalendarDays,
-},
+  
     {
   name: "My Prescriptions",
   href: "/dashboard/patient/prescriptions",

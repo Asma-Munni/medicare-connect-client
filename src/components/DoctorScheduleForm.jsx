@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
-import { updateDoctorSchedule } from "@/lib/actions/doctor";
+import {
+  getDoctorScheduleData,
+  updateDoctorSchedule,
+} from "@/lib/actions/doctor";
 import toast from "react-hot-toast";
 import { CalendarDays, Clock } from "lucide-react";
 
@@ -29,9 +31,6 @@ const timeSlots = [
 ];
 
 export default function DoctorScheduleForm() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-
   const [doctor, setDoctor] = useState(null);
   const [availableDays, setAvailableDays] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
@@ -39,38 +38,24 @@ export default function DoctorScheduleForm() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
   useEffect(() => {
     const loadDoctor = async () => {
-      if (isPending) return;
-
-      if (!user?.email) {
-        setLoading(false);
-        setError("Please login as a doctor.");
-        return;
-      }
-
       try {
         setLoading(true);
+        setError("");
 
-        const res = await fetch(
-          `${baseUrl}/doctors/email/${encodeURIComponent(user.email)}`,
-          { cache: "no-store" }
-        );
+        const result = await getDoctorScheduleData();
 
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError("Doctor profile not found for this account.");
+        if (!result?.success) {
+          setError(result?.message || "Doctor profile not found.");
           return;
         }
 
-        const doctorProfile = data.data;
+        const doctorProfile = result?.data;
 
         setDoctor(doctorProfile);
-        setAvailableDays(doctorProfile.availableDays || []);
-        setAvailableSlots(doctorProfile.availableSlots || []);
+        setAvailableDays(doctorProfile?.availableDays || []);
+        setAvailableSlots(doctorProfile?.availableSlots || []);
       } catch (error) {
         setError("Something went wrong while loading schedule.");
       } finally {
@@ -79,7 +64,7 @@ export default function DoctorScheduleForm() {
     };
 
     loadDoctor();
-  }, [isPending, user, baseUrl]);
+  }, []);
 
   const toggleDay = (day) => {
     setAvailableDays((prevDays) =>
@@ -122,6 +107,12 @@ export default function DoctorScheduleForm() {
       }
 
       toast.success("Schedule updated successfully.");
+
+      setDoctor((prevDoctor) => ({
+        ...prevDoctor,
+        availableDays,
+        availableSlots,
+      }));
     } catch (error) {
       toast.error("Something went wrong. Please try again.");
     } finally {
@@ -129,7 +120,7 @@ export default function DoctorScheduleForm() {
     }
   };
 
-  if (isPending || loading) {
+  if (loading) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
         <p className="text-slate-500">Loading doctor schedule...</p>
@@ -157,6 +148,7 @@ export default function DoctorScheduleForm() {
           <h2 className="text-xl font-bold text-slate-900">
             Update Available Schedule
           </h2>
+
           <p className="mt-1 text-sm text-slate-500">
             Select your available days and consultation time slots.
           </p>
@@ -191,6 +183,7 @@ export default function DoctorScheduleForm() {
       <div className="mt-8">
         <div className="flex items-center gap-2">
           <Clock className="text-blue-600" size={20} />
+
           <h3 className="text-lg font-bold text-slate-900">
             Available Time Slots
           </h3>
@@ -239,6 +232,7 @@ export default function DoctorScheduleForm() {
       </div>
 
       <button
+        type="button"
         onClick={handleUpdateSchedule}
         disabled={actionLoading}
         className="mt-6 rounded-full bg-blue-600 px-7 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"

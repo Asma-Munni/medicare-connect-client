@@ -7,7 +7,7 @@ import { authClient } from "@/lib/auth-client";
 export default function DashboardRedirectPage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-
+console.log(session);
   useEffect(() => {
     if (isPending) return;
 

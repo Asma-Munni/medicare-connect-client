@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import {
   CalendarDays,
   Clock,
@@ -11,62 +7,38 @@ import {
   ClipboardList,
 } from "lucide-react";
 
-export default function PatientOverviewCards() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
+import { getUserSession } from "@/lib/core/session";
+import { protectedFetch } from "@/lib/core/server";
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default async function PatientOverviewCards() {
+  const user = await getUserSession();
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
-  useEffect(() => {
-    const loadAppointments = async () => {
-      if (isPending) return;
-
-      if (!user) {
-        setLoading(false);
-        setError("Please login to see your appointment summary.");
-        return;
-      }
-
-      const patientId = user?.id || user?._id || user?.email;
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(
-          `${baseUrl}/appointments/patient/${patientId}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load appointment summary.");
-          return;
-        }
-
-        setAppointments(data?.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading summary.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAppointments();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
+  if (!user) {
     return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading patient overview...</p>
+      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
+        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
+        <p className="mt-2 text-sm text-red-500">
+          Please login to see your appointment summary.
+        </p>
       </div>
     );
+  }
+
+  const patientId = user?.id || user?._id || user?.email;
+
+  let appointments = [];
+  let error = "";
+
+  try {
+    const data = await protectedFetch(`/appointments/patient/${patientId}`);
+
+    if (!data?.success) {
+      error = data?.message || "Failed to load appointment summary.";
+    } else {
+      appointments = data?.data || [];
+    }
+  } catch (err) {
+    error = "Something went wrong while loading summary.";
   }
 
   if (error) {
@@ -93,7 +65,9 @@ export default function PatientOverviewCards() {
   ).length;
 
   const cancelledAppointments = appointments.filter(
-    (item) => item.appointmentStatus === "cancelled"
+    (item) =>
+      item.appointmentStatus === "cancelled" ||
+      item.appointmentStatus === "rejected"
   ).length;
 
   const unpaidAppointments = appointments.filter(
@@ -130,7 +104,7 @@ export default function PatientOverviewCards() {
       text: "text-purple-700",
     },
     {
-      title: "Cancelled",
+      title: "Cancelled / Rejected",
       value: cancelledAppointments,
       icon: XCircle,
       bg: "bg-red-50",

@@ -5,91 +5,94 @@ import { authClient } from "@/lib/auth-client";
 import { updateAppointmentStatus } from "@/lib/actions/appointment";
 import Link from "next/link";
 
-export default function PatientAppointmentsList({ appointments: initialAppointments = [] }) {
+export default function PatientAppointmentsList({
+  appointments: initialAppointments = [],
+}) {
   const { data: session } = authClient.useSession();
-  console.log(session);
+
   const user = session?.user;
   const token = session?.session?.token;
 
   const [appointments, setAppointments] = useState(initialAppointments);
-const [actionLoading, setActionLoading] = useState("");
-const [paymentLoading, setPaymentLoading] = useState("");
+  const [actionLoading, setActionLoading] = useState("");
+  const [paymentLoading, setPaymentLoading] = useState("");
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-
   const handleCancelAppointment = async (id) => {
-   
-  const confirmCancel = window.confirm(
-    "Are you sure you want to cancel this appointment?"
-  );
-
-  if (!confirmCancel) return;
-
-  try {
-     setActionLoading(id);
-    const result = await updateAppointmentStatus(id, "cancelled");
-
-    if (!result?.success) {
-      alert(result?.message || "Failed to cancel appointment.");
-      return;
-    }
-
-    setAppointments((prevAppointments) =>
-      prevAppointments.map((appointment) =>
-        appointment._id === id
-          ? { ...appointment, appointmentStatus: "cancelled" }
-          : appointment
-      )
+    const confirmCancel = window.confirm(
+      "Are you sure you want to cancel this appointment?"
     );
-  } catch (error) {
-    alert("Something went wrong. Please try again.");
-  }
-  finally {
-  setActionLoading("");
-}
-};
 
-const handlePayNow = async (appointment) => {
-  if (!token) {
-    alert("Authentication token missing. Please login again.");
-    return;
-  }
-  try {
-    setPaymentLoading(appointment._id);
+    if (!confirmCancel) return;
 
-    const patientId =
-  appointment.patientId || user?.id || user?._id || user?.email;
+    try {
+      setActionLoading(id);
 
-    const res = await fetch(`${baseUrl}/create-payment-session`, {
-      method: "POST",
-     headers: {
-  "Content-Type": "application/json",
-  authorization: `Bearer ${token}`,
-},
-      body: JSON.stringify({
-        appointmentId: appointment._id,
-        patientId,
-      }),
-    });
+      const result = await updateAppointmentStatus(id, "cancelled");
 
-    const data = await res.json();
+      if (!result?.success) {
+        alert(result?.message || "Failed to cancel appointment.");
+        return;
+      }
 
-    if (!data?.success) {
-      alert(data?.message || "Failed to create payment session.");
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment._id === id
+            ? { ...appointment, appointmentStatus: "cancelled" }
+            : appointment
+        )
+      );
+    } catch (error) {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setActionLoading("");
+    }
+  };
+
+  const handlePayNow = async (appointment) => {
+    if (!token) {
+      alert("Authentication token missing. Please login again.");
       return;
     }
 
-    window.location.href = data.url;
-  } catch (error) {
-    alert("Something went wrong while starting payment.");
-  } finally {
-    setPaymentLoading("");
-  }
-};
+    if (!baseUrl) {
+      alert("NEXT_PUBLIC_BASE_URL is missing.");
+      return;
+    }
 
-  
+    try {
+      setPaymentLoading(appointment._id);
 
+      const patientId =
+        appointment.patientId || user?.id || user?._id || user?.email;
+
+      const res = await fetch(`${baseUrl}/create-payment-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          appointmentId: appointment._id,
+          patientId,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data?.success) {
+        alert(data?.message || "Failed to create payment session.");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error) {
+      alert("Something went wrong while starting payment.");
+    } finally {
+      setPaymentLoading("");
+    }
+  };
 
   if (appointments.length === 0) {
     return (
@@ -162,43 +165,47 @@ const handlePayNow = async (appointment) => {
             </p>
 
             <div className="flex flex-wrap gap-2">
-  {appointment.paymentStatus === "paid" ? (
-  <button
-    disabled
-    className="rounded-full bg-green-50 px-5 py-2 text-xs font-semibold text-green-700 border border-green-100 cursor-not-allowed"
-  >
-    Paid
-  </button>
-) : appointment.appointmentStatus !== "cancelled" &&
-  appointment.appointmentStatus !== "rejected" ? (
-  <button
-    onClick={() => handlePayNow(appointment)}
-    disabled={paymentLoading === appointment._id}
-    className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-50"
-  >
-    {paymentLoading === appointment._id ? "Redirecting..." : "Pay Now"}
-  </button>
-) : (
-  <button
-    disabled
-    className="rounded-full bg-slate-100 px-5 py-2 text-xs font-semibold text-slate-500 cursor-not-allowed"
-  >
-    Payment Unavailable
-  </button>
-)}
+              {appointment.paymentStatus === "paid" ? (
+                <button
+                  disabled
+                  className="rounded-full bg-green-50 px-5 py-2 text-xs font-semibold text-green-700 border border-green-100 cursor-not-allowed"
+                >
+                  Paid
+                </button>
+              ) : appointment.appointmentStatus !== "cancelled" &&
+                appointment.appointmentStatus !== "rejected" ? (
+                <button
+                  onClick={() => handlePayNow(appointment)}
+                  disabled={paymentLoading === appointment._id}
+                  className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-50"
+                >
+                  {paymentLoading === appointment._id
+                    ? "Redirecting..."
+                    : "Pay Now"}
+                </button>
+              ) : (
+                <button
+                  disabled
+                  className="rounded-full bg-slate-100 px-5 py-2 text-xs font-semibold text-slate-500 cursor-not-allowed"
+                >
+                  Payment Unavailable
+                </button>
+              )}
 
-  {appointment.appointmentStatus !== "cancelled" &&
-    appointment.appointmentStatus !== "completed" &&
-    appointment.appointmentStatus !== "rejected" && (
-      <button
-  onClick={() => handleCancelAppointment(appointment._id)}
-  disabled={actionLoading === appointment._id}
-  className="rounded-full bg-red-50 px-5 py-2 text-xs font-semibold text-red-600 border border-red-100 hover:bg-red-100 transition disabled:opacity-50"
->
-  {actionLoading === appointment._id ? "Cancelling..." : "Cancel Appointment"}
-</button>
-    )}
-</div>
+              {appointment.appointmentStatus !== "cancelled" &&
+                appointment.appointmentStatus !== "completed" &&
+                appointment.appointmentStatus !== "rejected" && (
+                  <button
+                    onClick={() => handleCancelAppointment(appointment._id)}
+                    disabled={actionLoading === appointment._id}
+                    className="rounded-full bg-red-50 px-5 py-2 text-xs font-semibold text-red-600 border border-red-100 hover:bg-red-100 transition disabled:opacity-50"
+                  >
+                    {actionLoading === appointment._id
+                      ? "Cancelling..."
+                      : "Cancel Appointment"}
+                  </button>
+                )}
+            </div>
           </div>
         </div>
       ))}

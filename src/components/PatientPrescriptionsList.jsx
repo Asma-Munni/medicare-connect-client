@@ -1,63 +1,44 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { FileText, Pill, CalendarDays } from "lucide-react";
+import { getUserSession } from "@/lib/core/session";
+import { protectedFetch } from "@/lib/core/server";
+import { redirect } from "next/navigation";
 
-export default function PatientPrescriptionsList() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
+export default async function PatientPrescriptionsList() {
+  const user = await getUserSession();
 
-  const [prescriptions, setPrescriptions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  if (!user) {
+    redirect("/auth/signin");
+  }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  const patientId = user?.id || user?._id || user?.email;
 
-  useEffect(() => {
-    const loadPrescriptions = async () => {
-      if (isPending) return;
-
-      if (!user) {
-        setLoading(false);
-        setError("Please login to see your prescriptions.");
-        return;
-      }
-
-      const patientId = user?.id || user?._id || user?.email;
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${baseUrl}/prescriptions/patient/${patientId}`, {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load prescriptions.");
-          return;
-        }
-
-        setPrescriptions(data?.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading prescriptions.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPrescriptions();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
+  if (!patientId) {
     return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading prescriptions...</p>
+      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
+        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
+        <p className="mt-2 text-sm text-red-500">
+          Patient ID was not found. Please login again.
+        </p>
       </div>
     );
+  }
+
+  let prescriptions = [];
+  let error = "";
+
+  try {
+    const result = await protectedFetch(
+      `/prescriptions/patient/${encodeURIComponent(patientId)}`
+    );
+
+    if (!result?.success) {
+      error = result?.message || "Failed to load prescriptions.";
+    } else {
+      prescriptions = result?.data || [];
+    }
+  } catch (err) {
+    error = "Something went wrong while loading prescriptions.";
   }
 
   if (error) {
@@ -112,7 +93,7 @@ export default function PatientPrescriptionsList() {
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Doctor: {prescription.doctorName}
+                    Doctor: {prescription.doctorName || "N/A"}
                   </p>
                 </div>
               </div>
@@ -121,15 +102,15 @@ export default function PatientPrescriptionsList() {
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs text-slate-500">Patient</p>
                   <h3 className="mt-1 text-sm font-bold text-slate-900">
-                    {prescription.patientName}
+                    {prescription.patientName || "N/A"}
                   </h3>
                 </div>
 
                 <div className="rounded-2xl bg-slate-50 p-4">
                   <p className="text-xs text-slate-500">Appointment</p>
                   <h3 className="mt-1 text-sm font-bold text-slate-900">
-                    {prescription.appointmentDate} at{" "}
-                    {prescription.appointmentTime}
+                    {prescription.appointmentDate || "N/A"} at{" "}
+                    {prescription.appointmentTime || "N/A"}
                   </h3>
                 </div>
               </div>
@@ -152,7 +133,7 @@ export default function PatientPrescriptionsList() {
             <h3 className="text-lg font-bold text-slate-900">Diagnosis</h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {prescription.diagnosis}
+              {prescription.diagnosis || "N/A"}
             </p>
           </div>
 
@@ -185,29 +166,40 @@ export default function PatientPrescriptionsList() {
                 </thead>
 
                 <tbody className="divide-y divide-slate-100">
-                  {prescription.medicines?.map((medicine, index) => (
-                    <tr key={index}>
-                      <td className="px-4 py-3 text-sm font-semibold text-slate-900">
-                        {medicine.name}
-                      </td>
+                  {prescription.medicines?.length ? (
+                    prescription.medicines.map((medicine, index) => (
+                      <tr key={index}>
+                        <td className="px-4 py-3 text-sm font-semibold text-slate-900">
+                          {medicine.name || "N/A"}
+                        </td>
 
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {medicine.dosage}
-                      </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {medicine.dosage || "N/A"}
+                        </td>
 
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {medicine.frequency}
-                      </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {medicine.frequency || "N/A"}
+                        </td>
 
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {medicine.duration}
-                      </td>
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {medicine.duration || "N/A"}
+                        </td>
 
-                      <td className="px-4 py-3 text-sm text-slate-600">
-                        {medicine.instruction || "N/A"}
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {medicine.instruction || "N/A"}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="px-4 py-5 text-center text-sm text-slate-500"
+                      >
+                        No medicine added.
                       </td>
                     </tr>
-                  ))}
+                  )}
                 </tbody>
               </table>
             </div>
@@ -240,13 +232,13 @@ export default function PatientPrescriptionsList() {
           )}
 
           <div className="mt-5 border-t border-slate-100 pt-4">
-  <Link
-    href={`/dashboard/patient/prescriptions/${prescription._id}`}
-    className="inline-flex rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
-  >
-    View Prescription Details
-  </Link>
-</div>
+            <Link
+              href={`/dashboard/patient/prescriptions/${prescription._id}`}
+              className="inline-flex rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
+            >
+              View Prescription Details
+            </Link>
+          </div>
         </div>
       ))}
     </div>

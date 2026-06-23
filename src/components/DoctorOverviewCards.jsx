@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import {
   CalendarDays,
   Clock,
@@ -9,81 +5,58 @@ import {
   XCircle,
   CreditCard,
   ClipboardList,
-  UserCheck,
 } from "lucide-react";
 
-export default function DoctorOverviewCards() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
+import { getUserSession } from "@/lib/core/session";
+import { protectedFetch } from "@/lib/core/server";
+import { redirect } from "next/navigation";
 
-  const [appointments, setAppointments] = useState([]);
-  const [doctor, setDoctor] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default async function DoctorOverviewCards() {
+  const user = await getUserSession();
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  if (!user) {
+    redirect("/auth/signin");
+  }
 
-  useEffect(() => {
-    const loadDoctorOverview = async () => {
-      if (isPending) return;
-
-      if (!user?.email) {
-        setLoading(false);
-        setError("Please login as a doctor to see your dashboard overview.");
-        return;
-      }
-
-      try {
-        setLoading(true);
-
-        const doctorRes = await fetch(
-          `${baseUrl}/doctors/email/${encodeURIComponent(user.email)}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const doctorData = await doctorRes.json();
-
-        if (!doctorData?.success) {
-          setError("Doctor profile not found for this account.");
-          return;
-        }
-
-        const doctorProfile = doctorData.data;
-        setDoctor(doctorProfile);
-
-        const appointmentRes = await fetch(
-          `${baseUrl}/appointments/doctor/${doctorProfile._id}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const appointmentData = await appointmentRes.json();
-
-        if (!appointmentData?.success) {
-          setError(appointmentData?.message || "Failed to load appointments.");
-          return;
-        }
-
-        setAppointments(appointmentData?.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading doctor overview.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadDoctorOverview();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
+  if (!user?.email) {
     return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading doctor overview...</p>
+      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
+        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
+        <p className="mt-2 text-sm text-red-500">
+          Doctor email was not found. Please login again.
+        </p>
       </div>
     );
+  }
+
+  let doctor = null;
+  let appointments = [];
+  let error = "";
+
+  try {
+    const doctorData = await protectedFetch(
+      `/doctors/email/${encodeURIComponent(user.email)}`
+    );
+
+    if (!doctorData?.success) {
+      error = doctorData?.message || "Doctor profile not found for this account.";
+    } else {
+      doctor = doctorData?.data;
+    }
+
+    if (doctor?._id) {
+      const appointmentData = await protectedFetch(
+        `/appointments/doctor/${doctor._id}`
+      );
+
+      if (!appointmentData?.success) {
+        error = appointmentData?.message || "Failed to load appointments.";
+      } else {
+        appointments = appointmentData?.data || [];
+      }
+    }
+  } catch (err) {
+    error = "Something went wrong while loading doctor overview.";
   }
 
   if (error) {
@@ -179,8 +152,8 @@ export default function DoctorOverviewCards() {
         <div className="mt-6 rounded-3xl bg-white border border-blue-100 shadow-sm p-5">
           <div className="flex flex-col md:flex-row md:items-center gap-5">
             <img
-              src={doctor.profileImage}
-              alt={doctor.doctorName}
+              src={doctor.profileImage || "/default-doctor.png"}
+              alt={doctor.doctorName || "Doctor"}
               className="h-20 w-20 rounded-2xl object-cover border"
               referrerPolicy="no-referrer"
             />

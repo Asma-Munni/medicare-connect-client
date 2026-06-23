@@ -3,17 +3,33 @@ import { getUserToken } from "./session";
 
 const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
+export const authHeader = async () => {
+  const token = await getUserToken();
 
-export const authHeader = async () =>{
-  const token= await getUserToken();
-  const header = token ? {
-    authorization: `Bearer ${token}`
-  } : {};
-  return header;
-}
+  // Development check only
+  console.log("Server token:", token);
 
+  if (!token) {
+    return {};
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
 
 const handleStatusCode = async (res) => {
+  let data = null;
+
+  try {
+    data = await res.json();
+  } catch (error) {
+    data = {
+      success: false,
+      message: "Invalid server response.",
+    };
+  }
+
   if (res.status === 401) {
     redirect("/auth/signin");
   }
@@ -22,11 +38,28 @@ const handleStatusCode = async (res) => {
     redirect("/unauthorized");
   }
 
-  return res.json();
+  if (!res.ok) {
+    return {
+      success: false,
+      message: data?.message || "Request failed.",
+      status: res.status,
+      data: data?.data || null,
+    };
+  }
+
+  return data;
+};
+
+const buildUrl = (path) => {
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_BASE_URL is missing.");
+  }
+
+  return `${baseUrl}${path}`;
 };
 
 export const serverFetch = async (path) => {
-  const res = await fetch(`${baseUrl}${path}`, {
+  const res = await fetch(buildUrl(path), {
     cache: "no-store",
   });
 
@@ -34,7 +67,10 @@ export const serverFetch = async (path) => {
 };
 
 export const protectedFetch = async (path) => {
-  const res = await fetch(`${baseUrl}${path}`, {
+  console.log("Server path:", path);
+
+  const res = await fetch(buildUrl(path), {
+    method: "GET",
     headers: {
       ...(await authHeader()),
     },
@@ -45,7 +81,9 @@ export const protectedFetch = async (path) => {
 };
 
 export const serverMutation = async (path, data, method = "POST") => {
-  const res = await fetch(`${baseUrl}${path}`, {
+  console.log("Server mutation path:", path);
+
+  const res = await fetch(buildUrl(path), {
     method,
     headers: {
       "Content-Type": "application/json",

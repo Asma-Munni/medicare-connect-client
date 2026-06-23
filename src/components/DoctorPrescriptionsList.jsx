@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
-import { createPrescription } from "@/lib/actions/prescription";
+import {
+  createPrescription,
+  getDoctorPrescriptionData,
+} from "@/lib/actions/prescription";
 import { FileText, Plus, Trash2, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -15,9 +17,6 @@ const emptyMedicine = {
 };
 
 export default function DoctorPrescriptionsList() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-
   const [doctor, setDoctor] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [prescriptions, setPrescriptions] = useState([]);
@@ -26,64 +25,22 @@ export default function DoctorPrescriptionsList() {
   const [actionLoading, setActionLoading] = useState("");
   const [error, setError] = useState("");
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
   useEffect(() => {
     const loadDoctorData = async () => {
-      if (isPending) return;
-
-      if (!user?.email) {
-        setLoading(false);
-        setError("Please login as a doctor.");
-        return;
-      }
-
       try {
         setLoading(true);
+        setError("");
 
-        const doctorRes = await fetch(
-          `${baseUrl}/doctors/email/${encodeURIComponent(user.email)}`,
-          { cache: "no-store" }
-        );
+        const result = await getDoctorPrescriptionData();
 
-        const doctorData = await doctorRes.json();
-
-        if (!doctorData?.success) {
-          setError("Doctor profile not found for this account.");
+        if (!result?.success) {
+          setError(result?.message || "Failed to load prescription data.");
           return;
         }
 
-        const doctorProfile = doctorData.data;
-        setDoctor(doctorProfile);
-
-        const appointmentRes = await fetch(
-          `${baseUrl}/appointments/doctor/${doctorProfile._id}`,
-          { cache: "no-store" }
-        );
-
-        const appointmentData = await appointmentRes.json();
-
-        const prescriptionRes = await fetch(
-          `${baseUrl}/prescriptions/doctor/${doctorProfile._id}`,
-          { cache: "no-store" }
-        );
-
-        const prescriptionData = await prescriptionRes.json();
-
-        if (!appointmentData?.success) {
-          setError(appointmentData?.message || "Failed to load appointments.");
-          return;
-        }
-
-        if (!prescriptionData?.success) {
-          setError(
-            prescriptionData?.message || "Failed to load prescriptions."
-          );
-          return;
-        }
-
-        setAppointments(appointmentData?.data || []);
-        setPrescriptions(prescriptionData?.data || []);
+        setDoctor(result?.data?.doctor || null);
+        setAppointments(result?.data?.appointments || []);
+        setPrescriptions(result?.data?.prescriptions || []);
       } catch (error) {
         setError("Something went wrong while loading prescriptions.");
       } finally {
@@ -92,7 +49,7 @@ export default function DoctorPrescriptionsList() {
     };
 
     loadDoctorData();
-  }, [isPending, user, baseUrl]);
+  }, []);
 
   const handleFieldChange = (appointmentId, field, value) => {
     setFormData((prev) => ({
@@ -107,6 +64,7 @@ export default function DoctorPrescriptionsList() {
   const handleMedicineChange = (appointmentId, index, field, value) => {
     setFormData((prev) => {
       const currentForm = prev[appointmentId] || {};
+
       const medicines = currentForm.medicines?.length
         ? [...currentForm.medicines]
         : [{ ...emptyMedicine }];
@@ -129,6 +87,7 @@ export default function DoctorPrescriptionsList() {
   const handleAddMedicine = (appointmentId) => {
     setFormData((prev) => {
       const currentForm = prev[appointmentId] || {};
+
       const medicines = currentForm.medicines?.length
         ? [...currentForm.medicines]
         : [{ ...emptyMedicine }];
@@ -146,13 +105,14 @@ export default function DoctorPrescriptionsList() {
   const handleRemoveMedicine = (appointmentId, index) => {
     setFormData((prev) => {
       const currentForm = prev[appointmentId] || {};
+
       const medicines = currentForm.medicines?.length
         ? [...currentForm.medicines]
         : [{ ...emptyMedicine }];
 
-      const updatedMedicines = medicines.filter((_, itemIndex) => {
-        return itemIndex !== index;
-      });
+      const updatedMedicines = medicines.filter(
+        (_, itemIndex) => itemIndex !== index
+      );
 
       return {
         ...prev,
@@ -167,7 +127,13 @@ export default function DoctorPrescriptionsList() {
   };
 
   const handleCreatePrescription = async (appointment) => {
+    if (!doctor?._id) {
+      toast.error("Doctor profile is missing. Please reload the page.");
+      return;
+    }
+
     const currentForm = formData[appointment._id] || {};
+
     const medicines = currentForm.medicines?.length
       ? currentForm.medicines
       : [{ ...emptyMedicine }];
@@ -181,7 +147,7 @@ export default function DoctorPrescriptionsList() {
     );
 
     if (!currentForm.diagnosis || validMedicines.length === 0) {
-     toast.error("Please add diagnosis and at least one complete medicine.");
+      toast.error("Please add diagnosis and at least one complete medicine.");
       return;
     }
 
@@ -204,19 +170,21 @@ export default function DoctorPrescriptionsList() {
 
       toast.success("Prescription created successfully.");
 
-      setPrescriptions((prev) => [result.data, ...prev]);
+      if (result?.data) {
+        setPrescriptions((prev) => [result.data, ...prev]);
 
-      setAppointments((prev) =>
-        prev.map((item) =>
-          item._id === appointment._id
-            ? {
-                ...item,
-                prescriptionStatus: "created",
-                prescriptionId: result.data._id,
-              }
-            : item
-        )
-      );
+        setAppointments((prev) =>
+          prev.map((item) =>
+            item._id === appointment._id
+              ? {
+                  ...item,
+                  prescriptionStatus: "created",
+                  prescriptionId: result.data._id,
+                }
+              : item
+          )
+        );
+      }
 
       setFormData((prev) => ({
         ...prev,
@@ -228,13 +196,13 @@ export default function DoctorPrescriptionsList() {
         },
       }));
     } catch (error) {
-     toast.error("Something went wrong. Please try again.");
+      toast.error("Something went wrong. Please try again.");
     } finally {
       setActionLoading("");
     }
   };
 
-  if (isPending || loading) {
+  if (loading) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
         <p className="text-slate-500">Loading prescriptions...</p>
@@ -275,6 +243,7 @@ export default function DoctorPrescriptionsList() {
             <h2 className="text-xl font-bold text-slate-900">
               Create Prescription
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               You can create prescriptions only for completed appointments.
             </p>
@@ -291,6 +260,7 @@ export default function DoctorPrescriptionsList() {
           <div className="mt-6 space-y-6">
             {prescriptionableAppointments.map((appointment) => {
               const currentForm = formData[appointment._id] || {};
+
               const medicines = currentForm.medicines?.length
                 ? currentForm.medicines
                 : [{ ...emptyMedicine }];
@@ -505,6 +475,7 @@ export default function DoctorPrescriptionsList() {
             <h2 className="text-xl font-bold text-slate-900">
               Created Prescriptions
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               Total prescriptions: {prescriptions.length}
             </p>
