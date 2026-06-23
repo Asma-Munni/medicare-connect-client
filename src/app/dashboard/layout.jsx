@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   CalendarDays,
   Users,
+  BarChart3,
   Stethoscope,
   ClipboardList,
   LogOut,
@@ -137,6 +138,11 @@ const adminMenus = [
     href: "/dashboard/admin",
     icon: LayoutDashboard,
   },
+  {
+  name: "Analytics",
+  href: "/dashboard/admin/analytics",
+  icon: BarChart3,
+},
   {
   name: "My Profile",
   href: "/dashboard/profile",
