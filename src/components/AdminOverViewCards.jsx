@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import {
   Users,
   Stethoscope,
@@ -12,56 +9,23 @@ import {
   UserCheck,
 } from "lucide-react";
 
-export default function AdminOverviewCards() {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+import { protectedFetch } from "@/lib/core/server";
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+export default async function AdminOverviewCards() {
+  const result = await protectedFetch("/stats");
 
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${baseUrl}/stats`, {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load statistics.");
-          return;
-        }
-
-        setStats(data.data);
-      } catch (error) {
-        setError("Something went wrong while loading statistics.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, [baseUrl]);
-
-  if (loading) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading dashboard statistics...</p>
-      </div>
-    );
-  }
-
-  if (error) {
+  if (!result?.success) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
         <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
-        <p className="mt-2 text-sm text-red-500">{error}</p>
+        <p className="mt-2 text-sm text-red-500">
+          {result?.message || "Failed to load statistics."}
+        </p>
       </div>
     );
   }
+
+  const stats = result.data;
 
   const cards = [
     {

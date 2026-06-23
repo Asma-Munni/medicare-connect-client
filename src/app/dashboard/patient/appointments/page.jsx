@@ -1,12 +1,21 @@
 import PatientAppointmentsList from "@/components/PatientAppointmentsList";
-
+import { protectedFetch } from "@/lib/core/server";
+import { getUserSession } from "@/lib/core/session";
 
 export const metadata = {
   title: "My Appointments | MediCare Connect",
   description: "View your booked appointments.",
 };
 
-export default function PatientAppointmentsPage() {
+export default async function PatientAppointmentsPage() {
+  const user = await getUserSession();
+
+  const patientId = user?.id || user?._id || user?.email;
+
+  const result = await protectedFetch(`/appointments/patient/${patientId}`);
+
+  const appointments = result?.data || [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
@@ -22,7 +31,7 @@ export default function PatientAppointmentsPage() {
           </p>
         </div>
 
-        <PatientAppointmentsList />
+        <PatientAppointmentsList appointments={appointments} />
       </section>
     </main>
   );

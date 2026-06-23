@@ -1,12 +1,16 @@
 import AdminPaymentsList from "@/components/AdminPaymentsList";
-
+import { protectedFetch } from "@/lib/core/server";
 
 export const metadata = {
   title: "Manage Payments | MediCare Connect",
   description: "Admin payment management page.",
 };
 
-export default function AdminPaymentsPage() {
+export default async function AdminPaymentsPage() {
+  const result = await protectedFetch("/payments");
+
+  const payments = result?.data || [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
@@ -23,7 +27,7 @@ export default function AdminPaymentsPage() {
           </p>
         </div>
 
-        <AdminPaymentsList />
+        <AdminPaymentsList payments={payments} />
       </section>
     </main>
   );

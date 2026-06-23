@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { updateAppointmentStatus } from "@/lib/actions/appointment";
 
-export default function AdminAppointmentsList() {
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function AdminAppointmentsList({ appointments: initialAppointments = [] }) {
+  const [appointments, setAppointments] = useState(initialAppointments);
   const [actionLoading, setActionLoading] = useState("");
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+  
 
   const handleStatusUpdate = async (appointmentId, appointmentStatus) => {
   try {
@@ -39,50 +37,9 @@ export default function AdminAppointmentsList() {
   }
 };
 
-  useEffect(() => {
-    const loadAppointments = async () => {
-      try {
-        setLoading(true);
+ 
 
-        const res = await fetch(`${baseUrl}/appointments`, {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load appointments.");
-          return;
-        }
-
-        setAppointments(data?.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading appointments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAppointments();
-  }, [baseUrl]);
-
-  if (loading) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading appointments...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
-        <p className="mt-2 text-sm text-red-500">{error}</p>
-      </div>
-    );
-  }
-
+ 
   if (appointments.length === 0) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">

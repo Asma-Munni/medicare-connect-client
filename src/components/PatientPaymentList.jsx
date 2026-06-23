@@ -1,74 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
 import Link from "next/link";
 import { CreditCard, ReceiptText } from "lucide-react";
 
-export default function PatientPaymentsList() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-
-  useEffect(() => {
-    const loadPayments = async () => {
-      if (isPending) return;
-
-      if (!user) {
-        setLoading(false);
-        setError("Please login to see your payment history.");
-        return;
-      }
-
-      const patientId = user?.id || user?._id || user?.email;
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(`${baseUrl}/payments/patient/${patientId}`, {
-          cache: "no-store",
-        });
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load payment history.");
-          return;
-        }
-
-        setPayments(data?.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading payments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPayments();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading payment history...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
-        <p className="mt-2 text-sm text-red-500">{error}</p>
-      </div>
-    );
-  }
-
+export default function PatientPaymentsList({ payments = [] }) {
   if (payments.length === 0) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-8 text-center">
@@ -104,6 +39,7 @@ export default function PatientPaymentsList() {
             <h2 className="text-xl font-bold text-slate-900">
               Payment History
             </h2>
+
             <p className="mt-1 text-sm text-slate-500">
               Total payments: {payments.length}
             </p>
@@ -118,18 +54,23 @@ export default function PatientPaymentsList() {
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Doctor
               </th>
+
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Amount
               </th>
+
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Method
               </th>
+
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Status
               </th>
+
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Transaction
               </th>
+
               <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
                 Date
               </th>
@@ -143,6 +84,7 @@ export default function PatientPaymentsList() {
                   <h3 className="text-sm font-bold text-slate-900">
                     {payment.doctorName || "N/A"}
                   </h3>
+
                   <p className="mt-1 text-xs text-slate-500">
                     {payment.doctorEmail || "No email"}
                   </p>
@@ -152,6 +94,7 @@ export default function PatientPaymentsList() {
                   <span className="text-sm font-bold text-slate-900">
                     ৳{payment.amount || 0}
                   </span>
+
                   <p className="mt-1 text-xs uppercase text-slate-500">
                     {payment.currency || "bdt"}
                   </p>

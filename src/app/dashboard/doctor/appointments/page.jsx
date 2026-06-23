@@ -1,12 +1,28 @@
 import DoctorProfilePreview from "@/components/DoctorProfilePreview";
 import DoctorAppointmentRequests from "@/components/DoctorAppointmentRequests";
+import { protectedFetch, serverFetch } from "@/lib/core/server";
+import { getUserSession } from "@/lib/core/session";
 
 export const metadata = {
   title: "Doctor Appointments | MediCare Connect",
   description: "Doctor appointment requests page.",
 };
 
-export default function DoctorAppointmentsPage() {
+export default async function DoctorAppointmentsPage() {
+  const user = await getUserSession();
+
+  const doctorResult = user?.email
+    ? await serverFetch(`/doctors/email/${encodeURIComponent(user.email)}`)
+    : null;
+
+  const doctor = doctorResult?.data || null;
+
+  const appointmentsResult = doctor?._id
+    ? await protectedFetch(`/appointments/doctor/${doctor._id}`)
+    : null;
+
+  const appointments = appointmentsResult?.data || [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
@@ -22,9 +38,9 @@ export default function DoctorAppointmentsPage() {
           </p>
         </div>
 
-        <DoctorProfilePreview />
+        <DoctorProfilePreview doctor={doctor} />
 
-        <DoctorAppointmentRequests />
+        <DoctorAppointmentRequests appointments={appointments} />
       </section>
     </main>
   );

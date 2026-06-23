@@ -1,23 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { updateAppointmentStatus } from "@/lib/actions/appointment";
 import Link from "next/link";
 
-export default function PatientAppointmentsList() {
-  const { data: session, isPending } = authClient.useSession();
+export default function PatientAppointmentsList({ appointments: initialAppointments = [] }) {
+  const { data: session } = authClient.useSession();
+  console.log(session);
   const user = session?.user;
+  const token = session?.session?.token;
 
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [paymentLoading, setPaymentLoading] = useState("");
+  const [appointments, setAppointments] = useState(initialAppointments);
+const [actionLoading, setActionLoading] = useState("");
+const [paymentLoading, setPaymentLoading] = useState("");
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
 
   const handleCancelAppointment = async (id) => {
+   
   const confirmCancel = window.confirm(
     "Are you sure you want to cancel this appointment?"
   );
@@ -25,6 +27,7 @@ export default function PatientAppointmentsList() {
   if (!confirmCancel) return;
 
   try {
+     setActionLoading(id);
     const result = await updateAppointmentStatus(id, "cancelled");
 
     if (!result?.success) {
@@ -42,19 +45,28 @@ export default function PatientAppointmentsList() {
   } catch (error) {
     alert("Something went wrong. Please try again.");
   }
+  finally {
+  setActionLoading("");
+}
 };
 
 const handlePayNow = async (appointment) => {
+  if (!token) {
+    alert("Authentication token missing. Please login again.");
+    return;
+  }
   try {
     setPaymentLoading(appointment._id);
 
-    const patientId = user?.id || user?._id || user?.email;
+    const patientId =
+  appointment.patientId || user?.id || user?._id || user?.email;
 
     const res = await fetch(`${baseUrl}/create-payment-session`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+     headers: {
+  "Content-Type": "application/json",
+  authorization: `Bearer ${token}`,
+},
       body: JSON.stringify({
         appointmentId: appointment._id,
         patientId,
@@ -76,69 +88,8 @@ const handlePayNow = async (appointment) => {
   }
 };
 
-  useEffect(() => {
-    const getAppointments = async () => {
-      if (isPending) return;
+  
 
-      if (!user) {
-        setLoading(false);
-        setError("Please login to see your appointments.");
-        return;
-      }
-
-      const patientId = user?.id || user?._id || user?.email;
-
-      try {
-        setLoading(true);
-
-        const res = await fetch(
-          `${baseUrl}/appointments/patient/${patientId}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const data = await res.json();
-
-        if (!data?.success) {
-          setError(data?.message || "Failed to load appointments.");
-          return;
-        }
-
-        setAppointments(data?.data || []);
-      } catch (err) {
-        setError("Something went wrong while loading appointments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getAppointments();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
-    return (
-      <div className="rounded-3xl bg-white border border-blue-100 p-8 text-center">
-        <p className="text-slate-500">Loading appointments...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-3xl bg-white border border-red-100 p-8 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Unable to load</h2>
-        <p className="mt-2 text-sm text-red-500">{error}</p>
-
-        <Link
-          href="/auth/signin"
-          className="mt-5 inline-flex rounded-full bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
-        >
-          Login
-        </Link>
-      </div>
-    );
-  }
 
   if (appointments.length === 0) {
     return (
@@ -240,11 +191,12 @@ const handlePayNow = async (appointment) => {
     appointment.appointmentStatus !== "completed" &&
     appointment.appointmentStatus !== "rejected" && (
       <button
-        onClick={() => handleCancelAppointment(appointment._id)}
-        className="rounded-full bg-red-50 px-5 py-2 text-xs font-semibold text-red-600 border border-red-100 hover:bg-red-100 transition"
-      >
-        Cancel Appointment
-      </button>
+  onClick={() => handleCancelAppointment(appointment._id)}
+  disabled={actionLoading === appointment._id}
+  className="rounded-full bg-red-50 px-5 py-2 text-xs font-semibold text-red-600 border border-red-100 hover:bg-red-100 transition disabled:opacity-50"
+>
+  {actionLoading === appointment._id ? "Cancelling..." : "Cancel Appointment"}
+</button>
     )}
 </div>
           </div>

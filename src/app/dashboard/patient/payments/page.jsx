@@ -1,12 +1,21 @@
 import PatientPaymentsList from "@/components/PatientPaymentList";
-
+import { protectedFetch } from "@/lib/core/server";
+import { getUserSession } from "@/lib/core/session";
 
 export const metadata = {
   title: "My Payments | MediCare Connect",
   description: "Patient payment history page.",
 };
 
-export default function PatientPaymentsPage() {
+export default async function PatientPaymentsPage() {
+  const user = await getUserSession();
+
+  const patientId = user?.id || user?._id || user?.email;
+
+  const result = await protectedFetch(`/payments/patient/${patientId}`);
+
+  const payments = result?.data || [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
@@ -22,7 +31,7 @@ export default function PatientPaymentsPage() {
           </p>
         </div>
 
-        <PatientPaymentsList />
+        <PatientPaymentsList payments={payments} />
       </section>
     </main>
   );

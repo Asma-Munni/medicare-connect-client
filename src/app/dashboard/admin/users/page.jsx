@@ -1,11 +1,15 @@
 import AdminUsersList from "@/components/AdminUsersList";
+import { protectedFetch } from "@/lib/core/server";
 
 export const metadata = {
   title: "Manage Users | MediCare Connect",
   description: "Admin user management page.",
 };
 
-export default function AdminUsersPage() {
+export default async function AdminUsersPage() {
+  const result = await protectedFetch("/users");
+  const users = result?.data || [];
+
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="max-w-6xl mx-auto px-4 lg:px-8 py-6">
@@ -21,7 +25,7 @@ export default function AdminUsersPage() {
           </p>
         </div>
 
-        <AdminUsersList />
+        <AdminUsersList users={users} />
       </section>
     </main>
   );

@@ -31,11 +31,31 @@ export default function DashboardLayout({ children }) {
   const user = session?.user;
   const role = user?.role || "patient";
 
-  useEffect(() => {
-    if (!isPending && !user) {
-      router.replace("/auth/signin");
-    }
-  }, [isPending, user, router]);
+ useEffect(() => {
+  if (isPending) return;
+
+  if (!user) {
+    router.replace("/auth/signin");
+    return;
+  }
+
+  const role = user?.role || "patient";
+
+  if (pathname.startsWith("/dashboard/admin") && role !== "admin") {
+    router.replace("/unauthorized");
+    return;
+  }
+
+  if (pathname.startsWith("/dashboard/doctor") && role !== "doctor") {
+    router.replace("/unauthorized");
+    return;
+  }
+
+  if (pathname.startsWith("/dashboard/patient") && role !== "patient") {
+    router.replace("/unauthorized");
+    return;
+  }
+}, [isPending, user, pathname, router]);
 
   const handleLogout = async () => {
     await authClient.signOut();

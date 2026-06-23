@@ -1,224 +1,187 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { useState } from "react";
+import toast from "react-hot-toast";
 import { updateAppointmentStatus } from "@/lib/actions/appointment";
 
-export default function DoctorAppointmentRequests() {
-  const { data: session, isPending } = authClient.useSession();
-  const user = session?.user;
-
-  const [appointments, setAppointments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+export default function DoctorAppointmentRequests({
+  appointments: initialAppointments = [],
+}) {
+  const [appointments, setAppointments] = useState(initialAppointments);
   const [actionLoading, setActionLoading] = useState("");
-  
 
+  const handleStatusUpdate = async (appointmentId, appointmentStatus) => {
+    try {
+      setActionLoading(appointmentId + appointmentStatus);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+      const result = await updateAppointmentStatus(
+        appointmentId,
+        appointmentStatus
+      );
 
-
-  const handleStatusUpdate = async (appointmentId, status) => {
-  try {
-    setActionLoading(appointmentId + status);
-
-    const result = await updateAppointmentStatus(appointmentId, status);
-
-    if (!result?.success) {
-      alert(result?.message || "Failed to update appointment status.");
-      return;
-    }
-
-    setAppointments((prevAppointments) =>
-      prevAppointments.map((appointment) =>
-        appointment._id === appointmentId
-          ? { ...appointment, appointmentStatus: status }
-          : appointment
-      )
-    );
-  } catch (error) {
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setActionLoading("");
-  }
-};
-
-  useEffect(() => {
-    const loadAppointments = async () => {
-      if (isPending) return;
-
-      if (!user?.email) {
-        setLoading(false);
-        setError("Please login as a doctor.");
+      if (!result?.success) {
+        toast.error(result?.message || "Failed to update appointment status.");
         return;
       }
 
-      try {
-        setLoading(true);
+      setAppointments((prevAppointments) =>
+        prevAppointments.map((appointment) =>
+          appointment._id === appointmentId
+            ? { ...appointment, appointmentStatus }
+            : appointment
+        )
+      );
 
-        // Step 1: get doctor profile by logged-in email
-        const doctorRes = await fetch(
-          `${baseUrl}/doctors/email/${encodeURIComponent(user.email)}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const doctorData = await doctorRes.json();
-
-        if (!doctorData?.success) {
-          setError("Doctor profile not found for this account.");
-          return;
-        }
-
-        const doctor = doctorData.data;
-
-        // Step 2: get appointments by doctor MongoDB _id
-        const appointmentRes = await fetch(
-          `${baseUrl}/appointments/doctor/${doctor._id}`,
-          {
-            cache: "no-store",
-          }
-        );
-
-        const appointmentData = await appointmentRes.json();
-
-        if (!appointmentData?.success) {
-          setError(appointmentData?.message || "Failed to load appointments.");
-          return;
-        }
-
-        setAppointments(appointmentData.data || []);
-      } catch (error) {
-        setError("Something went wrong while loading appointments.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadAppointments();
-  }, [isPending, user, baseUrl]);
-
-  if (isPending || loading) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <p className="text-slate-500">Loading appointment requests...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mt-6 rounded-3xl bg-white border border-red-100 p-6 text-center">
-        <h2 className="text-xl font-bold text-slate-900">Unable to Load</h2>
-        <p className="mt-2 text-sm text-red-500">{error}</p>
-      </div>
-    );
-  }
+      toast.success("Appointment status updated successfully.");
+    } catch (error) {
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setActionLoading("");
+    }
+  };
 
   if (appointments.length === 0) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
-        <h2 className="text-2xl font-bold text-slate-900">
+        <h2 className="text-xl font-bold text-slate-900">
           No appointment requests found
         </h2>
 
         <p className="mt-2 text-sm text-slate-500">
-          You have not received any appointment request yet.
+          No patient has booked an appointment with you yet.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="mt-6 space-y-4">
-      {appointments.map((appointment) => (
-        <div
-          key={appointment._id}
-          className="rounded-3xl bg-white border border-blue-100 shadow-sm p-5"
-        >
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                {appointment.patientName}
-              </h2>
+    <div className="mt-6 rounded-3xl bg-white border border-blue-100 shadow-sm overflow-hidden">
+      <div className="border-b border-slate-100 p-5">
+        <h2 className="text-xl font-bold text-slate-900">
+          Patient Appointment Requests
+        </h2>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Email: {appointment.patientEmail}
-              </p>
+        <p className="mt-1 text-sm text-slate-500">
+          Total requests: {appointments.length}
+        </p>
+      </div>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Problem: {appointment.symptoms || "Not provided"}
-              </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead className="bg-blue-50">
+            <tr>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Patient
+              </th>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Fee:{" "}
-                <span className="font-bold text-slate-900">
-                  ৳{appointment.consultationFee}
-                </span>
-              </p>
-            </div>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Date & Time
+              </th>
 
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 border border-blue-100">
-                {appointment.appointmentDate}
-              </span>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Problem
+              </th>
 
-              <span className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700 border border-slate-200">
-                {appointment.appointmentTime}
-              </span>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Payment
+              </th>
 
-              <span className="rounded-full bg-yellow-50 px-4 py-2 text-xs font-semibold text-yellow-700 border border-yellow-100 capitalize">
-                {appointment.appointmentStatus}
-              </span>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Status
+              </th>
 
-              <span className="rounded-full bg-red-50 px-4 py-2 text-xs font-semibold text-red-700 border border-red-100 capitalize">
-                {appointment.paymentStatus}
-              </span>
-            </div>
+              <th className="px-5 py-4 text-xs font-bold uppercase tracking-wide text-slate-600">
+                Action
+              </th>
+            </tr>
+          </thead>
 
-            <div className="mt-4 border-t border-slate-100 pt-4 flex flex-wrap gap-2">
-  {appointment.appointmentStatus === "pending" && (
-    <>
-      <button
-        onClick={() => handleStatusUpdate(appointment._id, "accepted")}
-        disabled={actionLoading === appointment._id + "accepted"}
-        className="rounded-full bg-green-600 px-5 py-2 text-xs font-semibold text-white hover:bg-green-700 transition disabled:opacity-60"
-      >
-        Accept
-      </button>
+          <tbody className="divide-y divide-slate-100">
+            {appointments.map((appointment) => (
+              <tr key={appointment._id} className="hover:bg-slate-50">
+                <td className="px-5 py-4">
+                  <h3 className="text-sm font-bold text-slate-900">
+                    {appointment.patientName || "N/A"}
+                  </h3>
 
-      <button
-        onClick={() => handleStatusUpdate(appointment._id, "rejected")}
-        disabled={actionLoading === appointment._id + "rejected"}
-        className="rounded-full bg-red-600 px-5 py-2 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-60"
-      >
-        Reject
-      </button>
-    </>
-  )}
+                  <p className="mt-1 text-xs text-slate-500">
+                    {appointment.patientEmail || "No email"}
+                  </p>
+                </td>
 
-  {appointment.appointmentStatus === "accepted" && (
-    <button
-      onClick={() => handleStatusUpdate(appointment._id, "completed")}
-      disabled={actionLoading === appointment._id + "completed"}
-      className="rounded-full bg-blue-600 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60"
-    >
-      Mark as Complete
-    </button>
-  )}
+                <td className="px-5 py-4">
+                  <span className="block text-sm font-semibold text-slate-900">
+                    {appointment.appointmentDate}
+                  </span>
 
-  {["rejected", "cancelled", "completed"].includes(
-    appointment.appointmentStatus
-  ) && (
-    <p className="text-sm text-slate-500">
-      No action available for this appointment.
-    </p>
-  )}
-</div>
-          </div>
-        </div>
-      ))}
+                  <span className="mt-1 block text-xs text-slate-500">
+                    {appointment.appointmentTime}
+                  </span>
+                </td>
+
+                <td className="px-5 py-4 text-sm text-slate-600">
+                  {appointment.symptoms || "Not provided"}
+                </td>
+
+                <td className="px-5 py-4">
+                  <span className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 capitalize">
+                    {appointment.paymentStatus || "unpaid"}
+                  </span>
+                </td>
+
+                <td className="px-5 py-4">
+                  <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-700 capitalize">
+                    {appointment.appointmentStatus || "pending"}
+                  </span>
+                </td>
+
+                <td className="px-5 py-4">
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() =>
+                        handleStatusUpdate(appointment._id, "accepted")
+                      }
+                      disabled={
+                        appointment.appointmentStatus === "accepted" ||
+                        actionLoading === appointment._id + "accepted"
+                      }
+                      className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 hover:bg-green-100 disabled:opacity-50"
+                    >
+                      Accept
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleStatusUpdate(appointment._id, "rejected")
+                      }
+                      disabled={
+                        appointment.appointmentStatus === "rejected" ||
+                        actionLoading === appointment._id + "rejected"
+                      }
+                      className="rounded-full bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-50"
+                    >
+                      Reject
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleStatusUpdate(appointment._id, "completed")
+                      }
+                      disabled={
+                        appointment.appointmentStatus === "completed" ||
+                        actionLoading === appointment._id + "completed"
+                      }
+                      className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100 disabled:opacity-50"
+                    >
+                      Complete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
