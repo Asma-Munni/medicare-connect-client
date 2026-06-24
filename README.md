@@ -6,24 +6,25 @@
 
 The main purpose of this platform is to connect patients, doctors, and administrators through a centralized online healthcare system. Patients can search doctors, book appointments, make payments, manage appointment history, and submit reviews. Doctors can manage schedules, accept or reject appointments, complete consultations, and create prescriptions. Admins can manage users, verify doctors, monitor appointments, view payment records, and analyze platform activities.
 
-This project was developed as part of the **A10_CAT-016 Assignment**.
+
 
 ---
 
 ## Live Links
 
-* **Live Site:** Add your live site link here
-* **Client Repository:** Add your client GitHub repository link here
-* **Server Repository:** Add your server GitHub repository link here
+* **Live Site:** (https://medicare-connect-client-sigma.vercel.app/)
+* **Client Repository:** (https://github.com/Asma-Munni/medicare-connect-client)
+* **Server Repository:** (https://github.com/Asma-Munni/medicare-connect-server)
 
 ---
 
 ## Admin Credentials
 
-```txt
-Admin Email: add-admin-email-here
-Admin Password: add-admin-password-here
-```
+
+Admin Email: admin@medicare.com
+Password: Admin@12345
+
+
 
 ---
 
@@ -232,7 +233,7 @@ The admin dashboard includes:
 
 ### Users Collection
 
-```js
+
 {
   name,
   email,
@@ -243,11 +244,11 @@ The admin dashboard includes:
   createdAt,
   status
 }
-```
+
 
 ### Doctors Collection
 
-```js
+
 {
   doctorName,
   specialization,
@@ -260,11 +261,11 @@ The admin dashboard includes:
   availableSlots,
   verificationStatus
 }
-```
+
 
 ### Appointments Collection
 
-```js
+
 {
   patientId,
   doctorId,
@@ -274,11 +275,11 @@ The admin dashboard includes:
   symptoms,
   paymentStatus
 }
-```
+
 
 ### Reviews Collection
 
-```js
+
 {
   patientId,
   doctorId,
@@ -286,11 +287,11 @@ The admin dashboard includes:
   reviewText,
   createdAt
 }
-```
+
 
 ### Payments Collection
 
-```js
+
 {
   appointmentId,
   patientId,
@@ -299,11 +300,11 @@ The admin dashboard includes:
   transactionId,
   paymentDate
 }
-```
+
 
 ### Prescriptions Collection
 
-```js
+
 {
   doctorId,
   patientId,
@@ -313,7 +314,7 @@ The admin dashboard includes:
   notes,
   createdAt
 }
-```
+
 
 ---
 

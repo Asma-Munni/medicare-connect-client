@@ -97,7 +97,7 @@ export default function HeroBanner() {
                   <div className="relative">
                     <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center mb-6">
                       <Image
-                        src="/images/logo.png"
+                        src="/Images/logo.png"
                         alt="MediCare Connect Logo"
                         width={70}
                         height={70}

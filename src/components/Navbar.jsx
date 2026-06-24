@@ -54,7 +54,7 @@ export default function Navbar() {
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2">
             <Image
-              src="/images/logo.png"
+              src="/Images/logo.png"
               alt="MediCare Connect Logo"
               width={150}
               height={50}
