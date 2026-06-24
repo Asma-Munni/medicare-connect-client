@@ -746,7 +746,6 @@ medicare-connect-server/
 ├── utils/
 │   └── stripe.js
 │
-├── .env.example
 ├── .gitignore
 ├── package-lock.json
 └── package.json
