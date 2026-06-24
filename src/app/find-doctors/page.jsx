@@ -1,4 +1,3 @@
-
 import DoctorCard from "@/components/DoctorsCard";
 import { getDoctors } from "@/lib/api/doctors";
 import Link from "next/link";
@@ -37,13 +36,18 @@ const getSortConfig = (sort) => {
   return { sortBy: "createdAt", order: "desc" };
 };
 
-export default async function FindDoctorsPage({ searchParams }) {
-  const params = searchParams || {};
+const getSingleValue = (value) => {
+  if (Array.isArray(value)) return value[0] || "";
+  return value || "";
+};
 
-  const search = params.search || "";
-  const specialization = params.specialization || "";
-  const sort = params.sort || "latest";
-  const page = Number(params.page) || 1;
+export default async function FindDoctorsPage({ searchParams }) {
+  const params = await searchParams;
+
+  const search = getSingleValue(params?.search);
+  const specialization = getSingleValue(params?.specialization);
+  const sort = getSingleValue(params?.sort) || "latest";
+  const page = Number(getSingleValue(params?.page)) || 1;
   const limit = 6;
 
   const { sortBy, order } = getSortConfig(sort);
@@ -129,7 +133,7 @@ export default async function FindDoctorsPage({ searchParams }) {
             </select>
           </div>
 
-          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+          <div className="mt-4 flex justify-center items-center flex-col sm:flex-row gap-3">
             <button
               type="submit"
               className="rounded-full bg-blue-600 px-7 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
