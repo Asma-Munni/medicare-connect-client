@@ -111,6 +111,11 @@ export default function DashboardLayout({ children }) {
       icon: LayoutDashboard,
     },
     {
+    name: "Create Profile",
+    href: "/dashboard/doctor/create-profile",
+    icon: Users,
+  },
+    {
   name: "My Profile",
   href: "/dashboard/profile",
   icon: UserCircle,

@@ -84,3 +84,33 @@ export const updateDoctorSchedule = async (doctorId, scheduleData) => {
 
   return result;
 };
+
+export const createDoctorProfile = async (formData, token) => {
+  try {
+    const res = await fetch(`${baseUrl}/doctors`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(formData),
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      return {
+        success: false,
+        message: data?.message || "Failed to create profile",
+      };
+    }
+
+    return data;
+  } catch (error) {
+    return {
+      success: false,
+      message: error.message || "Network error",
+    };
+  }
+};

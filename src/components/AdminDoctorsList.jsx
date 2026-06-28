@@ -11,36 +11,43 @@ export default function AdminDoctorsList() {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-
   const handleVerificationUpdate = async (doctorId, verificationStatus) => {
-  try {
-    setActionLoading(doctorId + verificationStatus);
+    try {
+      setActionLoading(doctorId + verificationStatus);
 
-    const result = await updateDoctorVerification(doctorId, verificationStatus);
+      const result = await updateDoctorVerification(
+        doctorId,
+        verificationStatus
+      );
 
-    if (!result?.success) {
-      alert(result?.message || "Failed to update doctor status.");
-      return;
+      if (!result?.success) {
+        alert(result?.message || "Failed to update doctor status.");
+        return;
+      }
+
+      setDoctors((prev) =>
+        prev.map((doc) =>
+          doc._id === doctorId
+            ? { ...doc, verificationStatus }
+            : doc
+        )
+      );
+    } catch (error) {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setActionLoading("");
     }
-
-    setDoctors((prevDoctors) =>
-      prevDoctors.map((doctor) =>
-        doctor._id === doctorId
-          ? { ...doctor, verificationStatus }
-          : doctor
-      )
-    );
-  } catch (error) {
-    alert("Something went wrong. Please try again.");
-  } finally {
-    setActionLoading("");
-  }
-};
+  };
 
   useEffect(() => {
     const loadDoctors = async () => {
       try {
         setLoading(true);
+
+        if (!baseUrl) {
+          setError("Base URL missing");
+          return;
+        }
 
         const res = await fetch(`${baseUrl}/doctors?limit=100`, {
           cache: "no-store",
@@ -81,13 +88,10 @@ export default function AdminDoctorsList() {
     );
   }
 
-  if (doctors.length === 0) {
+  if (!doctors.length) {
     return (
       <div className="mt-6 rounded-3xl bg-white border border-blue-100 p-6 text-center">
         <h2 className="text-xl font-bold text-slate-900">No doctors found</h2>
-        <p className="mt-2 text-sm text-slate-500">
-          No doctor profile has been added yet.
-        </p>
       </div>
     );
   }
@@ -104,83 +108,66 @@ export default function AdminDoctorsList() {
               src={doctor.profileImage}
               alt={doctor.doctorName}
               className="h-20 w-20 rounded-2xl object-cover"
-              referrerPolicy="no-referrer"
             />
 
             <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-slate-900">
-                  {doctor.doctorName}
-                </h2>
+              <h2 className="text-lg font-bold text-slate-900">
+                {doctor.doctorName}
+              </h2>
 
-                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700 capitalize">
-                  {doctor.verificationStatus}
-                </span>
-              </div>
-
-              <p className="mt-1 text-sm font-semibold text-blue-600">
+              <p className="text-sm text-blue-600">
                 {doctor.specialization}
               </p>
 
-              <p className="mt-1 text-sm text-slate-500">
-                {doctor.qualifications}
+              <p className="text-sm text-slate-500">
+                {doctor.email}
               </p>
 
-              <p className="mt-1 text-sm text-slate-500">
-                Email: {doctor.email}
-              </p>
+              <span className="inline-block mt-2 rounded-full bg-slate-100 px-3 py-1 text-xs">
+                {doctor.verificationStatus}
+              </span>
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
-                  {doctor.experience} Years
-                </span>
+              {/* ACTIONS */}
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() =>
+                    handleVerificationUpdate(doctor._id, "verified")
+                  }
+                  disabled={
+                    doctor.verificationStatus === "verified" ||
+                    actionLoading === doctor._id + "verified"
+                  }
+                  className="px-3 py-1 text-xs rounded-full bg-green-600 text-white"
+                >
+                  Verify
+                </button>
 
-                <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                  Fee ৳{doctor.consultationFee}
-                </span>
+                <button
+                  onClick={() =>
+                    handleVerificationUpdate(doctor._id, "pending")
+                  }
+                  disabled={
+                    doctor.verificationStatus === "pending" ||
+                    actionLoading === doctor._id + "pending"
+                  }
+                  className="px-3 py-1 text-xs rounded-full bg-yellow-500 text-white"
+                >
+                  Pending
+                </button>
 
-                <span className="rounded-full bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-700">
-                  ★ {doctor.averageRating || 0}
-                </span>
+                <button
+                  onClick={() =>
+                    handleVerificationUpdate(doctor._id, "rejected")
+                  }
+                  disabled={
+                    doctor.verificationStatus === "rejected" ||
+                    actionLoading === doctor._id + "rejected"
+                  }
+                  className="px-3 py-1 text-xs rounded-full bg-red-600 text-white"
+                >
+                  Reject
+                </button>
               </div>
-
-
-
-             <div className="mt-4 flex flex-wrap gap-2">
-  <button
-    onClick={() => handleVerificationUpdate(doctor._id, "verified")}
-    disabled={
-      doctor.verificationStatus === "verified" ||
-      actionLoading === doctor._id + "verified"
-    }
-    className="rounded-full bg-green-600 px-4 py-2 text-xs font-semibold text-white hover:bg-green-700 transition disabled:opacity-50"
-  >
-    Verify
-  </button>
-
-  <button
-    onClick={() => handleVerificationUpdate(doctor._id, "pending")}
-    disabled={
-      doctor.verificationStatus === "pending" ||
-      actionLoading === doctor._id + "pending"
-    }
-    className="rounded-full bg-yellow-500 px-4 py-2 text-xs font-semibold text-white hover:bg-yellow-600 transition disabled:opacity-50"
-  >
-    Pending
-  </button>
-
-  <button
-    onClick={() => handleVerificationUpdate(doctor._id, "rejected")}
-    disabled={
-      doctor.verificationStatus === "rejected" ||
-      actionLoading === doctor._id + "rejected"
-    }
-    className="rounded-full bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 transition disabled:opacity-50"
-  >
-    Reject
-  </button>
-</div>
-
             </div>
           </div>
         </div>
