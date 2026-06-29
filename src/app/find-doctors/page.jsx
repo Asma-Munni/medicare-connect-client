@@ -79,15 +79,15 @@ export default async function FindDoctorsPage({ searchParams }) {
 
   return (
     <main className="bg-gradient-to-br from-blue-50 via-white to-cyan-50 min-h-screen">
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
+      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-05">
         <div className="text-center max-w-3xl mx-auto">
           <p className="text-blue-600 font-semibold">Find Doctors</p>
 
-          <h1 className="mt-2 text-4xl md:text-5xl font-bold text-slate-900">
+          <h1 className="mt-2 text-3xl md:text-5xl font-bold text-slate-900">
             Search Verified Doctors
           </h1>
 
-          <p className="mt-4 text-slate-600 leading-7">
+          <p className="mt-3 text-slate-600 leading-7">
             Browse verified doctors, compare consultation fees, check
             experience, and book appointments easily through MediCare Connect.
           </p>
@@ -96,7 +96,7 @@ export default async function FindDoctorsPage({ searchParams }) {
         <form
           action="/find-doctors"
           method="GET"
-          className="mt-10 rounded-3xl bg-white border border-blue-100 shadow-sm p-5"
+          className="mt-6 rounded-3xl bg-white border border-blue-100 shadow-sm p-5"
         >
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <input
@@ -133,7 +133,7 @@ export default async function FindDoctorsPage({ searchParams }) {
             </select>
           </div>
 
-          <div className="mt-4 flex justify-center items-center flex-col sm:flex-row gap-3">
+          <div className="mt-3 flex justify-center items-center flex-col sm:flex-row gap-3">
             <button
               type="submit"
               className="rounded-full bg-blue-600 px-7 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
@@ -150,7 +150,7 @@ export default async function FindDoctorsPage({ searchParams }) {
           </div>
         </form>
 
-        <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+        <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <p className="text-sm text-slate-600">
             Showing{" "}
             <span className="font-semibold text-slate-900">
@@ -176,7 +176,7 @@ export default async function FindDoctorsPage({ searchParams }) {
         </div>
 
         {doctors.length === 0 ? (
-          <div className="mt-10 rounded-3xl bg-white border border-slate-100 p-10 text-center">
+          <div className="mt-6 rounded-3xl bg-white border border-slate-100 p-10 text-center">
             <h2 className="text-2xl font-bold text-slate-900">
               No doctors found
             </h2>
@@ -187,13 +187,13 @@ export default async function FindDoctorsPage({ searchParams }) {
           </div>
         ) : (
           <>
-            <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
               {doctors.map((doctor) => (
                 <DoctorCard key={doctor._id} doctor={doctor} />
               ))}
             </div>
 
-            <div className="mt-10 flex items-center justify-center gap-3">
+            <div className="mt-6 flex items-center justify-center gap-3">
               <Link
                 href={createPageLink(page - 1)}
                 className={`rounded-xl border border-blue-200 px-5 py-2 text-sm font-semibold ${
