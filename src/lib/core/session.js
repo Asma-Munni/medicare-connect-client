@@ -1,4 +1,4 @@
-import { authClient } from "@/lib/auth-client";
+
 import { auth } from "../auth";
   import { headers } from "next/headers";
 

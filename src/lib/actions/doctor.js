@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { protectedFetch, serverMutation } from "../core/server";
+import { baseUrl, protectedFetch, serverMutation } from "../core/server";
 import { getUserSession } from "../core/session";
 
 export const getDoctorScheduleData = async () => {
